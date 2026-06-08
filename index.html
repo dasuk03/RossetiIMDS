@@ -58,10 +58,48 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100dvh;
-    max-width: 430px;
-    margin: 0 auto;
     overflow-x: hidden;
     transition: background 0.3s, color 0.3s;
+  }
+
+  /* ── DESKTOP WRAPPER ── */
+  .app-wrapper {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+  }
+
+  @media (min-width: 768px) {
+    body { background: var(--bg2); }
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 0;
+      background: var(--bg2);
+    }
+    .app-wrapper {
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 8px 60px rgba(0,59,122,0.18);
+      min-height: calc(100dvh - 64px);
+      display: flex;
+      flex-direction: column;
+    }
+    .page.active { flex: 1; }
+    .bottom-nav {
+      left: auto !important;
+      transform: none !important;
+      width: 100% !important;
+      position: sticky;
+      bottom: 0;
+      border-radius: 0 0 24px 24px;
+    }
+    .action-menu, .modal { max-width: 480px; }
   }
 
   /* ── HEADER ── */
@@ -445,9 +483,10 @@
 
   /* ── NAV ── */
   .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 430px;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 100%;
     background: var(--nav-bg);
     border-top: 1px solid var(--border);
     display: flex;
@@ -661,6 +700,7 @@
 </style>
 </head>
 <body>
+<div class="app-wrapper">
 
 <!-- HOME PAGE -->
 <div class="page active" id="page-home">
@@ -1091,6 +1131,8 @@
   </div>
 </div>
 
+</div><!-- /.app-wrapper -->
+
 <script type="module">
 // ── TELEGRAM WEBAPP INIT ──
 const tg = window.Telegram?.WebApp;
@@ -1306,7 +1348,10 @@ async function addLink() {
 }
 
 // ── GITHUB STORAGE CONFIG ──
-const GH_TOKEN = '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';
+// ⚠️ ВАЖНО: вставь сюда новый токен из GitHub Settings → Developer settings
+// → Personal access tokens → Fine-grained tokens
+// Права токена: Contents (Read and Write) для репозитория dasuk03/RossetiIMDS
+const GH_TOKEN = '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';
 const GH_REPO  = 'dasuk03/RossetiIMDS';
 const GH_BRANCH = 'main';
 const GH_FOLDER = 'uploads';
@@ -1429,7 +1474,10 @@ async function addDocFile() {
 
     if (!resp.ok) {
       const err = await resp.json();
-      throw new Error(err.message || `GitHub API error ${resp.status}`);
+      if (resp.status === 401) throw new Error('Ошибка авторизации GitHub (Bad Credentials). Нужен новый токен — см. инструкцию в коде.');
+      if (resp.status === 404) throw new Error('Репозиторий не найден. Проверь GH_REPO в коде.');
+      if (resp.status === 422) throw new Error('Файл уже существует или ошибка данных: ' + (err.message||''));
+      throw new Error((err.message || `GitHub API error ${resp.status}`));
     }
 
     const data = await resp.json();
